@@ -3,7 +3,7 @@ import { pgTable, text, varchar, integer, timestamp, boolean, jsonb } from "driz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
@@ -20,7 +20,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Jobs table
+
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   clientId: varchar("client_id").notNull(),
@@ -59,7 +59,7 @@ export const portfolioItems = pgTable("portfolio_items", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Messages table
+
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   senderId: varchar("sender_id").notNull(),
@@ -69,7 +69,7 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Reviews table
+
 export const reviews = pgTable("reviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   jobId: varchar("job_id").notNull(),
@@ -95,7 +95,7 @@ export const campaigns = pgTable("campaigns", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Insert schemas
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
