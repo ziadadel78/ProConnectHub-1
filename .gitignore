@@ -1,6 +1,63 @@
-node_modules
-dist
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.next/
+server/public/
+
+# IDE and Editor
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.user
+*.sln.user
+*.swp
+*.swo
+*~
 .DS_Store
-server/public
-vite.config.ts.*
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
 *.tar.gz
+
+# Database
+*.sqlite
+*.db
+
+# Logs
+logs/
+*.log
+
+# Optional npm cache
+.npm
+
+# Cache
+.cache/
+*.cache
+
+# Vite
+vite.config.ts.*
+
+# OS
+.DS_Store
+Thumbs.db
