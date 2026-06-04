@@ -17,8 +17,8 @@ export async function apiRequest(
   const res = await fetch(url, {
     method,
     headers: {
-      ...(data && { "Content-Type": "application/json" }),
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",

@@ -57,9 +57,10 @@ export default function PortfolioCreate() {
   });
 
   const onSubmit = (data: InsertPortfolioItem) => {
-    const techArray = typeof data.technologies === "string" 
-      ? data.technologies.split(",").map(t => t.trim()).filter(Boolean)
-      : data.technologies;
+    const technologies = data.technologies as any;
+    const techArray = typeof technologies === "string" 
+      ? technologies.split(",").map((t: string) => t.trim()).filter(Boolean)
+      : (technologies || []);
 
     createPortfolioMutation.mutate({
       ...data,
@@ -193,6 +194,7 @@ export default function PortfolioCreate() {
                       <Input 
                         placeholder="https://example.com" 
                         {...field} 
+                        value={field.value || ""}
                         data-testid="input-project-url"
                       />
                     </FormControl>

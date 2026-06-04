@@ -12,7 +12,7 @@ import { logger } from '../logger/logger';
 declare global {
   namespace Express {
     interface Request {
-      user?: {
+      user: {
         id: string;
         email: string;
         role: string;

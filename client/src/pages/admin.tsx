@@ -15,7 +15,12 @@ export default function Admin() {
     queryKey: ["/api/jobs"],
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<{
+    totalUsers: number;
+    activeJobs: number;
+    totalRevenue: number;
+    growth: number;
+  }>({
     queryKey: ["/api/admin/stats"],
   });
 

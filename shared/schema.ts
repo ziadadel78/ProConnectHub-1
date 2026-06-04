@@ -1,11 +1,11 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Users table
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
@@ -14,76 +14,76 @@ export const users = pgTable("users", {
   bio: text("bio"),
   hourlyRate: integer("hourly_rate"),
   avatar: text("avatar"),
-  skills: text("skills").array().default(sql`ARRAY[]::text[]`),
+  skills: text("skills", { mode: "json" }).$type<string[]>().notNull().default(sql`'[]'`),
   location: text("location"),
   website: text("website"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Jobs table
-export const jobs = pgTable("jobs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  clientId: varchar("client_id").notNull(),
+export const jobs = sqliteTable("jobs", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   budget: integer("budget").notNull(),
   budgetType: text("budget_type").notNull(), // 'fixed', 'hourly'
   category: text("category").notNull(),
-  skills: text("skills").array().default(sql`ARRAY[]::text[]`),
+  skills: text("skills", { mode: "json" }).$type<string[]>().notNull().default(sql`'[]'`),
   status: text("status").notNull().default("open"), // 'open', 'in_progress', 'completed', 'cancelled'
   proposalCount: integer("proposal_count").notNull().default(0),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Proposals table
-export const proposals = pgTable("proposals", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  jobId: varchar("job_id").notNull(),
-  freelancerId: varchar("freelancer_id").notNull(),
+export const proposals = sqliteTable("proposals", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id").notNull(),
+  freelancerId: text("freelancer_id").notNull(),
   coverLetter: text("cover_letter").notNull(),
   proposedRate: integer("proposed_rate").notNull(),
   deliveryTime: integer("delivery_time").notNull(), // in days
   status: text("status").notNull().default("pending"), // 'pending', 'accepted', 'rejected'
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Portfolio items table
-export const portfolioItems = pgTable("portfolio_items", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+export const portfolioItems = sqliteTable("portfolio_items", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   imageUrl: text("image_url").notNull(),
-  technologies: text("technologies").array().default(sql`ARRAY[]::text[]`),
+  technologies: text("technologies", { mode: "json" }).$type<string[]>().notNull().default(sql`'[]'`),
   projectUrl: text("project_url"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Messages table
-export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  senderId: varchar("sender_id").notNull(),
-  receiverId: varchar("receiver_id").notNull(),
+export const messages = sqliteTable("messages", {
+  id: text("id").primaryKey(),
+  senderId: text("sender_id").notNull(),
+  receiverId: text("receiver_id").notNull(),
   content: text("content").notNull(),
-  read: boolean("read").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  read: integer("read", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Reviews table
-export const reviews = pgTable("reviews", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  jobId: varchar("job_id").notNull(),
-  reviewerId: varchar("reviewer_id").notNull(),
-  revieweeId: varchar("reviewee_id").notNull(),
+export const reviews = sqliteTable("reviews", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id").notNull(),
+  reviewerId: text("reviewer_id").notNull(),
+  revieweeId: text("reviewee_id").notNull(),
   rating: integer("rating").notNull(), // 1-5
   comment: text("comment"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Marketing campaigns table
-export const campaigns = pgTable("campaigns", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+export const campaigns = sqliteTable("campaigns", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
   name: text("name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("draft"), // 'draft', 'active', 'paused', 'completed'
@@ -92,7 +92,7 @@ export const campaigns = pgTable("campaigns", {
   clicks: integer("clicks").notNull().default(0),
   impressions: integer("impressions").notNull().default(0),
   conversions: integer("conversions").notNull().default(0),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Insert schemas
@@ -104,6 +104,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   password: z.string().min(6),
   name: z.string().min(1),
   role: z.enum(["freelancer", "client", "admin"]).optional(),
+  skills: z.array(z.string()).optional(),
 });
 
 export const insertJobSchema = createInsertSchema(jobs).omit({
@@ -117,6 +118,7 @@ export const insertJobSchema = createInsertSchema(jobs).omit({
   budgetType: z.enum(["fixed", "hourly"]),
   category: z.string().min(1),
   status: z.enum(["open", "in_progress", "completed", "cancelled"]).optional(),
+  skills: z.array(z.string()).optional(),
 });
 
 export const insertProposalSchema = createInsertSchema(proposals).omit({
@@ -136,6 +138,7 @@ export const insertPortfolioItemSchema = createInsertSchema(portfolioItems).omit
   title: z.string().min(3),
   description: z.string().min(10),
   imageUrl: z.string().url(),
+  technologies: z.array(z.string()).optional(),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).omit({

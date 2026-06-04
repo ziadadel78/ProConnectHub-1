@@ -1,5 +1,14 @@
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, desc, and, or, asc } from "drizzle-orm";
 import {
+  users,
+  jobs,
+  proposals,
+  portfolioItems,
+  messages,
+  reviews,
+  campaigns,
   type User,
   type InsertUser,
   type Job,
@@ -64,32 +73,16 @@ export interface IStorage {
   updateCampaign(id: string, updates: Partial<Campaign>): Promise<Campaign | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private jobs: Map<string, Job>;
-  private proposals: Map<string, Proposal>;
-  private portfolioItems: Map<string, PortfolioItem>;
-  private messages: Map<string, Message>;
-  private reviews: Map<string, Review>;
-  private campaigns: Map<string, Campaign>;
-
-  constructor() {
-    this.users = new Map();
-    this.jobs = new Map();
-    this.proposals = new Map();
-    this.portfolioItems = new Map();
-    this.messages = new Map();
-    this.reviews = new Map();
-    this.campaigns = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   // Users
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find((user) => user.email === email);
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -97,46 +90,41 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
-      title: null,
-      bio: null,
-      hourlyRate: null,
-      avatar: null,
-      skills: [],
-      location: null,
-      website: null,
+      role: insertUser.role ?? "freelancer",
+      title: insertUser.title ?? null,
+      bio: insertUser.bio ?? null,
+      hourlyRate: insertUser.hourlyRate ?? null,
+      avatar: insertUser.avatar ?? null,
+      skills: insertUser.skills ?? [],
+      location: insertUser.location ?? null,
+      website: insertUser.website ?? null,
       createdAt: new Date(),
     };
-    this.users.set(id, user);
+    await db.insert(users).values(user);
     return user;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    await db.update(users).set(updates).where(eq(users.id, id));
+    return this.getUser(id);
   }
 
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return db.select().from(users);
   }
 
   // Jobs
   async getJob(id: string): Promise<Job | undefined> {
-    return this.jobs.get(id);
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+    return job;
   }
 
   async getAllJobs(): Promise<Job[]> {
-    return Array.from(this.jobs.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return db.select().from(jobs).orderBy(desc(jobs.createdAt));
   }
 
   async getJobsByClient(clientId: string): Promise<Job[]> {
-    return Array.from(this.jobs.values())
-      .filter((job) => job.clientId === clientId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return db.select().from(jobs).where(eq(jobs.clientId, clientId)).orderBy(desc(jobs.createdAt));
   }
 
   async createJob(insertJob: InsertJob): Promise<Job> {
@@ -144,40 +132,37 @@ export class MemStorage implements IStorage {
     const job: Job = {
       ...insertJob,
       id,
+      skills: insertJob.skills ?? [],
+      status: insertJob.status ?? "open",
       proposalCount: 0,
       createdAt: new Date(),
     };
-    this.jobs.set(id, job);
+    await db.insert(jobs).values(job);
     return job;
   }
 
   async updateJob(id: string, updates: Partial<Job>): Promise<Job | undefined> {
-    const job = this.jobs.get(id);
-    if (!job) return undefined;
-    const updatedJob = { ...job, ...updates };
-    this.jobs.set(id, updatedJob);
-    return updatedJob;
+    await db.update(jobs).set(updates).where(eq(jobs.id, id));
+    return this.getJob(id);
   }
 
   async deleteJob(id: string): Promise<boolean> {
-    return this.jobs.delete(id);
+    await db.delete(jobs).where(eq(jobs.id, id));
+    return true;
   }
 
   // Proposals
   async getProposal(id: string): Promise<Proposal | undefined> {
-    return this.proposals.get(id);
+    const [proposal] = await db.select().from(proposals).where(eq(proposals.id, id));
+    return proposal;
   }
 
   async getProposalsByJob(jobId: string): Promise<Proposal[]> {
-    return Array.from(this.proposals.values())
-      .filter((proposal) => proposal.jobId === jobId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return db.select().from(proposals).where(eq(proposals.jobId, jobId)).orderBy(desc(proposals.createdAt));
   }
 
   async getProposalsByFreelancer(freelancerId: string): Promise<Proposal[]> {
-    return Array.from(this.proposals.values())
-      .filter((proposal) => proposal.freelancerId === freelancerId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return db.select().from(proposals).where(eq(proposals.freelancerId, freelancerId)).orderBy(desc(proposals.createdAt));
   }
 
   async createProposal(insertProposal: InsertProposal): Promise<Proposal> {
@@ -188,35 +173,30 @@ export class MemStorage implements IStorage {
       status: "pending",
       createdAt: new Date(),
     };
-    this.proposals.set(id, proposal);
+    await db.insert(proposals).values(proposal);
 
     // Increment proposal count for the job
-    const job = this.jobs.get(insertProposal.jobId);
+    const job = await this.getJob(insertProposal.jobId);
     if (job) {
-      job.proposalCount = (job.proposalCount || 0) + 1;
-      this.jobs.set(job.id, job);
+      await this.updateJob(job.id, { proposalCount: (job.proposalCount || 0) + 1 });
     }
 
     return proposal;
   }
 
   async updateProposal(id: string, updates: Partial<Proposal>): Promise<Proposal | undefined> {
-    const proposal = this.proposals.get(id);
-    if (!proposal) return undefined;
-    const updatedProposal = { ...proposal, ...updates };
-    this.proposals.set(id, updatedProposal);
-    return updatedProposal;
+    await db.update(proposals).set(updates).where(eq(proposals.id, id));
+    return this.getProposal(id);
   }
 
   // Portfolio
   async getPortfolioItem(id: string): Promise<PortfolioItem | undefined> {
-    return this.portfolioItems.get(id);
+    const [item] = await db.select().from(portfolioItems).where(eq(portfolioItems.id, id));
+    return item;
   }
 
   async getPortfolioByUser(userId: string): Promise<PortfolioItem[]> {
-    return Array.from(this.portfolioItems.values())
-      .filter((item) => item.userId === userId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return db.select().from(portfolioItems).where(eq(portfolioItems.userId, userId)).orderBy(desc(portfolioItems.createdAt));
   }
 
   async createPortfolioItem(insertItem: InsertPortfolioItem): Promise<PortfolioItem> {
@@ -224,43 +204,48 @@ export class MemStorage implements IStorage {
     const item: PortfolioItem = {
       ...insertItem,
       id,
+      technologies: insertItem.technologies ?? [],
+      projectUrl: insertItem.projectUrl ?? null,
       createdAt: new Date(),
     };
-    this.portfolioItems.set(id, item);
+    await db.insert(portfolioItems).values(item);
     return item;
   }
 
   async deletePortfolioItem(id: string): Promise<boolean> {
-    return this.portfolioItems.delete(id);
+    await db.delete(portfolioItems).where(eq(portfolioItems.id, id));
+    return true;
   }
 
   // Messages
   async getMessage(id: string): Promise<Message | undefined> {
-    return this.messages.get(id);
+    const [msg] = await db.select().from(messages).where(eq(messages.id, id));
+    return msg;
   }
 
   async getMessagesBetweenUsers(user1Id: string, user2Id: string): Promise<Message[]> {
-    return Array.from(this.messages.values())
-      .filter(
-        (msg) =>
-          (msg.senderId === user1Id && msg.receiverId === user2Id) ||
-          (msg.senderId === user2Id && msg.receiverId === user1Id)
+    return db.select().from(messages).where(
+      or(
+        and(eq(messages.senderId, user1Id), eq(messages.receiverId, user2Id)),
+        and(eq(messages.senderId, user2Id), eq(messages.receiverId, user1Id))
       )
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    ).orderBy(asc(messages.createdAt));
   }
 
   async getConversations(userId: string): Promise<any[]> {
-    const userMessages = Array.from(this.messages.values()).filter(
-      (msg) => msg.senderId === userId || msg.receiverId === userId
+    const userMessages = await db.select().from(messages).where(
+      or(eq(messages.senderId, userId), eq(messages.receiverId, userId))
     );
 
     const conversationMap = new Map<string, any>();
+    const allUsers = await this.getAllUsers();
+    const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
     for (const msg of userMessages) {
       const otherUserId = msg.senderId === userId ? msg.receiverId : msg.senderId;
 
       if (!conversationMap.has(otherUserId)) {
-        const otherUser = this.users.get(otherUserId);
+        const otherUser = userMap.get(otherUserId);
         conversationMap.set(otherUserId, {
           userId: otherUserId,
           userName: otherUser?.name || "Unknown",
@@ -295,27 +280,23 @@ export class MemStorage implements IStorage {
       read: false,
       createdAt: new Date(),
     };
-    this.messages.set(id, message);
+    await db.insert(messages).values(message);
     return message;
   }
 
   async markMessageAsRead(id: string): Promise<Message | undefined> {
-    const message = this.messages.get(id);
-    if (!message) return undefined;
-    message.read = true;
-    this.messages.set(id, message);
-    return message;
+    await db.update(messages).set({ read: true }).where(eq(messages.id, id));
+    return this.getMessage(id);
   }
 
   // Reviews
   async getReview(id: string): Promise<Review | undefined> {
-    return this.reviews.get(id);
+    const [review] = await db.select().from(reviews).where(eq(reviews.id, id));
+    return review;
   }
 
   async getReviewsByUser(userId: string): Promise<Review[]> {
-    return Array.from(this.reviews.values())
-      .filter((review) => review.revieweeId === userId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return db.select().from(reviews).where(eq(reviews.revieweeId, userId)).orderBy(desc(reviews.createdAt));
   }
 
   async createReview(insertReview: InsertReview): Promise<Review> {
@@ -323,21 +304,21 @@ export class MemStorage implements IStorage {
     const review: Review = {
       ...insertReview,
       id,
+      comment: insertReview.comment ?? null,
       createdAt: new Date(),
     };
-    this.reviews.set(id, review);
+    await db.insert(reviews).values(review);
     return review;
   }
 
   // Campaigns
   async getCampaign(id: string): Promise<Campaign | undefined> {
-    return this.campaigns.get(id);
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+    return campaign;
   }
 
   async getCampaignsByUser(userId: string): Promise<Campaign[]> {
-    return Array.from(this.campaigns.values())
-      .filter((campaign) => campaign.userId === userId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return db.select().from(campaigns).where(eq(campaigns.userId, userId)).orderBy(desc(campaigns.createdAt));
   }
 
   async createCampaign(insertCampaign: InsertCampaign): Promise<Campaign> {
@@ -345,22 +326,23 @@ export class MemStorage implements IStorage {
     const campaign: Campaign = {
       ...insertCampaign,
       id,
+      status: insertCampaign.status ?? "draft",
+      description: insertCampaign.description ?? null,
+      targetAudience: insertCampaign.targetAudience ?? null,
+      budget: insertCampaign.budget ?? null,
       clicks: 0,
       impressions: 0,
       conversions: 0,
       createdAt: new Date(),
     };
-    this.campaigns.set(id, campaign);
+    await db.insert(campaigns).values(campaign);
     return campaign;
   }
 
   async updateCampaign(id: string, updates: Partial<Campaign>): Promise<Campaign | undefined> {
-    const campaign = this.campaigns.get(id);
-    if (!campaign) return undefined;
-    const updatedCampaign = { ...campaign, ...updates };
-    this.campaigns.set(id, updatedCampaign);
-    return updatedCampaign;
+    await db.update(campaigns).set(updates).where(eq(campaigns.id, id));
+    return this.getCampaign(id);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

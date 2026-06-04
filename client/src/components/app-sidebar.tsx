@@ -91,7 +91,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="w-10 h-10">
-            <AvatarImage src={user?.avatar} />
+            <AvatarImage src={user?.avatar || undefined} />
             <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">

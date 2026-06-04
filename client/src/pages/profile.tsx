@@ -240,7 +240,7 @@ export default function Profile() {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 mb-4">
                 <Avatar className="w-16 h-16">
-                  <AvatarImage src={user?.avatar} />
+                  <AvatarImage src={user?.avatar || undefined} />
                   <AvatarFallback className="text-lg">{user?.name?.charAt(0) || "U"}</AvatarFallback>
                 </Avatar>
                 <div>

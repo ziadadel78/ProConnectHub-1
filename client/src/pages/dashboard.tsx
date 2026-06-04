@@ -20,7 +20,7 @@ import { Job, Proposal } from "@shared/schema";
 export default function Dashboard() {
   const { user, isFreelancer, isClient, isAdmin } = useAuth();
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<any>({
     queryKey: ["/api/dashboard/stats"],
   });
 

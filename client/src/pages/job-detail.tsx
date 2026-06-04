@@ -214,7 +214,7 @@ export default function JobDetail() {
             <CardContent>
               <div className="flex items-center gap-3 mb-4">
                 <Avatar className="w-12 h-12">
-                  <AvatarImage src={client?.avatar} />
+                  <AvatarImage src={client?.avatar || undefined} />
                   <AvatarFallback>{client?.name?.charAt(0) || "C"}</AvatarFallback>
                 </Avatar>
                 <div>
