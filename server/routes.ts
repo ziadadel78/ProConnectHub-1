@@ -37,6 +37,26 @@ function authenticateToken(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Seed default admin user on startup
+  (async () => {
+    try {
+      const adminEmail = "admin@proconnect.com";
+      const existingAdmin = await storage.getUserByEmail(adminEmail);
+      if (!existingAdmin) {
+        const hashedPassword = await bcrypt.hash("admin123", SALT_ROUNDS);
+        await storage.createUser({
+          email: adminEmail,
+          password: hashedPassword,
+          name: "Administrator",
+          role: "admin",
+        });
+        console.log(`Admin user seeded: ${adminEmail}`);
+      }
+    } catch (err) {
+      console.error("Failed to seed admin user:", err);
+    }
+  })();
+
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -102,6 +122,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
+  app.get("/api/freelancers", authenticateToken, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const freelancers = users
+        .filter(u => u.role === "freelancer")
+        .map(({ password, ...user }) => user);
+      res.json(freelancers);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/users/:id", authenticateToken, async (req, res) => {
     try {
       const user = await storage.getUser(req.params.id);
@@ -137,6 +169,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Job routes
+  app.get("/api/client/jobs", authenticateToken, async (req, res) => {
+    try {
+      const jobs = await storage.getJobsByClient(req.user.id);
+      res.json(jobs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/jobs", async (req, res) => {
     try {
       const jobs = await storage.getAllJobs();
@@ -243,6 +284,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updatedProposal = await storage.updateProposal(req.params.id, req.body);
+      
+      // If the proposal is accepted, update the associated job status to in_progress
+      if (req.body.status === "accepted") {
+        await storage.updateJob(proposal.jobId, { status: "in_progress" });
+      }
+      
       res.json(updatedProposal);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -358,11 +405,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/campaigns", authenticateToken, async (req, res) => {
     try {
-      const validatedData = insertCampaignSchema.parse(req.body);
-      const campaign = await storage.createCampaign(validatedData);
+      const { name, description, targetAudience, budget, status } = req.body;
+      if (!name || name.length < 3) {
+        return res.status(400).json({ message: "Campaign name must be at least 3 characters." });
+      }
+      const campaignData = {
+        userId: req.user.id,
+        name,
+        description: description || null,
+        targetAudience: targetAudience || null,
+        budget: budget ? parseInt(budget) : null,
+        status: status || "draft",
+      };
+      const campaign = await storage.createCampaign(campaignData as any);
       res.json(campaign);
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   });
 

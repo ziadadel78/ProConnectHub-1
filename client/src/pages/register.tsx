@@ -12,12 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { useLanguage } from "@/lib/language";
 import { Link } from "wouter";
 
 export default function Register() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const searchParams = new URLSearchParams(window.location.search);
   const defaultRole = searchParams.get("role") || "freelancer";
@@ -39,15 +42,15 @@ export default function Register() {
     onSuccess: (data) => {
       login(data.token, data.user);
       toast({
-        title: "Account created!",
-        description: "Welcome to ProConnect Hub.",
+        title: t("auth.register.successTitle"),
+        description: t("auth.register.successMessage"),
       });
       setLocation("/dashboard");
     },
     onError: (error: any) => {
       toast({
-        title: "Registration failed",
-        description: error.message || "Could not create account. Please try again.",
+        title: t("auth.register.failedTitle"),
+        description: error.message || t("auth.register.failedMessage"),
         variant: "destructive",
       });
     },
@@ -59,7 +62,8 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <LanguageToggle />
         <ThemeToggle />
       </div>
       <Card className="w-full max-w-md">
@@ -70,8 +74,10 @@ export default function Register() {
             </div>
             <span className="font-semibold text-xl">ProConnect Hub</span>
           </div>
-          <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>Join thousands of professionals on ProConnect Hub</CardDescription>
+          <CardTitle className="text-2xl">{t("auth.register.title")}</CardTitle>
+          <CardDescription>
+            {t("auth.register.subtitle")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -81,9 +87,9 @@ export default function Register() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>{t("auth.register.nameLabel")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} data-testid="input-name" />
+                      <Input placeholder={t("auth.register.namePlaceholder")} {...field} data-testid="input-name" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -94,9 +100,9 @@ export default function Register() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("auth.register.emailLabel")}</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} data-testid="input-email" />
+                      <Input type="email" placeholder={t("auth.register.emailPlaceholder")} {...field} data-testid="input-email" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -107,9 +113,9 @@ export default function Register() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("auth.register.passwordLabel")}</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} data-testid="input-password" />
+                      <Input type="password" placeholder={t("auth.register.passwordPlaceholder")} {...field} data-testid="input-password" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -120,7 +126,7 @@ export default function Register() {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>I want to</FormLabel>
+                    <FormLabel>{t("auth.register.roleLabel")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-role">
@@ -128,8 +134,8 @@ export default function Register() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="freelancer">Find work as a Freelancer</SelectItem>
-                        <SelectItem value="client">Hire talent as a Client</SelectItem>
+                        <SelectItem value="freelancer">{t("auth.register.roleFreelancer")}</SelectItem>
+                        <SelectItem value="client">{t("auth.register.roleClient")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -142,14 +148,14 @@ export default function Register() {
                 disabled={registerMutation.isPending}
                 data-testid="button-submit"
               >
-                {registerMutation.isPending ? "Creating account..." : "Create account"}
+                {registerMutation.isPending ? t("auth.register.submitting") : t("auth.register.submitButton")}
               </Button>
             </form>
           </Form>
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
+            <span className="text-muted-foreground">{t("auth.register.hasAccount")} </span>
             <Link href="/login" className="text-primary hover:underline" data-testid="link-login">
-              Sign in
+              {t("auth.register.signIn")}
             </Link>
           </div>
         </CardContent>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,12 +20,25 @@ export default function Messages() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const userId = searchParams.get("user");
+    if (userId) {
+      setSelectedUserId(userId);
+    }
+  }, []);
+
   const { data: conversations, isLoading: conversationsLoading } = useQuery<any[]>({
     queryKey: ["/api/messages/conversations"],
   });
 
   const { data: messages, isLoading: messagesLoading } = useQuery<Message[]>({
     queryKey: ["/api/messages", selectedUserId],
+    enabled: !!selectedUserId,
+  });
+
+  const { data: selectedUserDetails } = useQuery<User>({
+    queryKey: ["/api/users", selectedUserId],
     enabled: !!selectedUserId,
   });
 
@@ -126,9 +139,15 @@ export default function Messages() {
               <CardHeader className="border-b border-border">
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarFallback>U</AvatarFallback>
+                    {selectedUserDetails?.avatar && <AvatarImage src={selectedUserDetails.avatar} />}
+                    <AvatarFallback>{selectedUserDetails?.name?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
-                  <CardTitle>Conversation</CardTitle>
+                  <div>
+                    <CardTitle>{selectedUserDetails?.name || "Conversation"}</CardTitle>
+                    {selectedUserDetails?.title && (
+                      <p className="text-sm text-muted-foreground">{selectedUserDetails.title}</p>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">

@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { LanguageProvider } from "@/lib/language";
 
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -24,6 +26,8 @@ import Profile from "@/pages/profile";
 import Marketing from "@/pages/marketing";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
+import FreelancersBrowse from "@/pages/freelancers-browse";
+import StaticPage from "@/pages/static-page";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { isAuthenticated } = useAuth();
@@ -49,7 +53,7 @@ function AppRouter() {
   const [location] = useLocation();
   const { isAuthenticated } = useAuth();
   
-  const isPublicRoute = location === "/" || location === "/login" || location === "/register";
+  const isPublicRoute = location === "/" || location === "/login" || location === "/register" || location.startsWith("/page/");
 
   const sidebarStyle = {
     "--sidebar-width": "16rem",
@@ -62,6 +66,7 @@ function AppRouter() {
         <Route path="/" component={Landing} />
         <Route path="/login">{() => <PublicOnlyRoute component={Login} />}</Route>
         <Route path="/register">{() => <PublicOnlyRoute component={Register} />}</Route>
+        <Route path="/page/:slug" component={StaticPage} />
         <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
         <Route>{() => <Redirect to={isAuthenticated ? "/dashboard" : "/"} />}</Route>
       </Switch>
@@ -75,7 +80,10 @@ function AppRouter() {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between p-4 border-b border-border bg-background">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <LanguageToggle />
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-auto bg-background">
             <Switch>
@@ -95,7 +103,8 @@ function AppRouter() {
               <Route path="/admin/jobs">{() => <ProtectedRoute component={Admin} />}</Route>
               <Route path="/admin/analytics">{() => <ProtectedRoute component={Admin} />}</Route>
               <Route path="/my-jobs">{() => <ProtectedRoute component={JobsBrowse} />}</Route>
-              <Route path="/freelancers">{() => <ProtectedRoute component={JobsBrowse} />}</Route>
+              <Route path="/freelancers">{() => <ProtectedRoute component={FreelancersBrowse} />}</Route>
+              <Route path="/page/:slug" component={StaticPage} />
               <Route component={NotFound} />
             </Switch>
           </main>
@@ -108,12 +117,14 @@ function AppRouter() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <AppRouter />
-          <Toaster />
-        </AuthProvider>
-      </TooltipProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <AuthProvider>
+            <AppRouter />
+            <Toaster />
+          </AuthProvider>
+        </TooltipProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

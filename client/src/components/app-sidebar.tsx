@@ -24,35 +24,37 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
+import { useLanguage } from "@/lib/language";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout, isAdmin } = useAuth();
+  const { t } = useLanguage();
 
   const freelancerMenuItems = [
-    { title: "Dashboard", url: "/dashboard", icon: Home },
-    { title: "Browse Jobs", url: "/jobs", icon: Briefcase },
-    { title: "My Proposals", url: "/proposals", icon: FileText },
-    { title: "Portfolio", url: "/portfolio", icon: FolderOpen },
-    { title: "Messages", url: "/messages", icon: MessageSquare },
-    { title: "Marketing Tools", url: "/marketing", icon: TrendingUp },
+    { title: t("common.nav.dashboard"), url: "/dashboard", icon: Home },
+    { title: t("common.nav.browseJobs"), url: "/jobs", icon: Briefcase },
+    { title: t("common.nav.myProposals"), url: "/proposals", icon: FileText },
+    { title: t("common.nav.portfolio"), url: "/portfolio", icon: FolderOpen },
+    { title: t("common.nav.messages"), url: "/messages", icon: MessageSquare },
+    { title: t("common.nav.marketing"), url: "/marketing", icon: TrendingUp },
   ];
 
   const clientMenuItems = [
-    { title: "Dashboard", url: "/dashboard", icon: Home },
-    { title: "My Jobs", url: "/my-jobs", icon: Briefcase },
-    { title: "Browse Freelancers", url: "/freelancers", icon: Users },
-    { title: "Messages", url: "/messages", icon: MessageSquare },
-    { title: "Marketing Tools", url: "/marketing", icon: TrendingUp },
+    { title: t("common.nav.dashboard"), url: "/dashboard", icon: Home },
+    { title: t("common.nav.myJobs"), url: "/my-jobs", icon: Briefcase },
+    { title: t("common.nav.browseFreelancers"), url: "/freelancers", icon: Users },
+    { title: t("common.nav.messages"), url: "/messages", icon: MessageSquare },
+    { title: t("common.nav.marketing"), url: "/marketing", icon: TrendingUp },
   ];
 
   const adminMenuItems = [
-    { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
-    { title: "Users", url: "/admin/users", icon: Users },
-    { title: "Jobs", url: "/admin/jobs", icon: Briefcase },
-    { title: "Analytics", url: "/admin/analytics", icon: TrendingUp },
+    { title: t("common.nav.dashboard"), url: "/dashboard", icon: BarChart3 },
+    { title: t("common.nav.users"), url: "/admin/users", icon: Users },
+    { title: t("common.nav.jobs"), url: "/admin/jobs", icon: Briefcase },
+    { title: t("common.nav.analytics"), url: "/admin/analytics", icon: TrendingUp },
   ];
 
   const menuItems = isAdmin ? adminMenuItems : user?.role === "client" ? clientMenuItems : freelancerMenuItems;
@@ -63,15 +65,15 @@ export function AppSidebar() {
         <Link href="/dashboard">
           <div className="flex items-center gap-2 cursor-pointer hover-elevate active-elevate-2 rounded-md p-2">
             <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-semibold text-sm">PC</span>
+              <span className="text-primary-foreground font-semibold text-sm">{t("common.appInitials")}</span>
             </div>
-            <span className="font-semibold text-lg">ProConnect</span>
+            <span className="font-semibold text-lg">{t("common.appName")}</span>
           </div>
         </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("common.menu")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -103,11 +105,11 @@ export function AppSidebar() {
           <Button variant="outline" size="sm" asChild className="flex-1" data-testid="button-profile">
             <Link href="/profile">
               <User className="w-4 h-4 mr-2" />
-              Profile
+              {t("common.nav.profile")}
             </Link>
           </Button>
           <Button variant="outline" size="sm" onClick={logout} data-testid="button-logout">
-            Logout
+            {t("common.nav.logout")}
           </Button>
         </div>
       </SidebarFooter>

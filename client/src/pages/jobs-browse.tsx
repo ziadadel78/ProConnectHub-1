@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,15 @@ import { useAuth } from "@/lib/auth";
 
 export default function JobsBrowse() {
   const { isClient } = useAuth();
+  const [location] = useLocation();
+  const isMyJobs = location === "/my-jobs";
+  
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [budgetType, setBudgetType] = useState("all");
 
   const { data: jobs, isLoading } = useQuery<Job[]>({
-    queryKey: ["/api/jobs"],
+    queryKey: [isMyJobs ? "/api/client/jobs" : "/api/jobs"],
   });
 
   const categories = ["all", "Web Development", "Mobile Development", "Design", "Writing", "Marketing", "Other"];
@@ -42,10 +45,10 @@ export default function JobsBrowse() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">
-            {isClient ? "Browse Freelancers" : "Browse Jobs"}
+            {isMyJobs ? "My Posted Jobs" : "Browse Jobs"}
           </h1>
           <p className="text-muted-foreground">
-            {isClient ? "Find the perfect talent for your project" : "Find your next opportunity"}
+            {isMyJobs ? "Manage the jobs you've posted on the platform" : "Find your next opportunity"}
           </p>
         </div>
         {isClient && (

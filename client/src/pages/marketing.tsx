@@ -1,5 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import { Link } from "wouter";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +17,58 @@ import { useAuth } from "@/lib/auth";
 
 export default function Marketing() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newCampaign, setNewCampaign] = useState({ name: "", description: "", targetAudience: "", budget: "" });
 
   const { data: campaigns, isLoading } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns", user?.id],
     enabled: !!user?.id,
   });
+
+  const updateCampaignMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await apiRequest("PUT", `/api/campaigns/${id}`, { status });
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", user?.id] });
+      toast({ title: "Success", description: "Campaign updated successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update campaign.", variant: "destructive" });
+    },
+  });
+
+  const createCampaignMutation = useMutation({
+    mutationFn: async (campaign: any) => {
+      const res = await apiRequest("POST", "/api/campaigns", campaign);
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", user?.id] });
+      setIsCreateOpen(false);
+      setNewCampaign({ name: "", description: "", targetAudience: "", budget: "" });
+      toast({ title: "Success", description: "Campaign created successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to create campaign.", variant: "destructive" });
+    },
+  });
+
+  const handleCreateCampaign = () => {
+    if (!newCampaign.name) {
+      toast({ title: "Error", description: "Campaign name is required.", variant: "destructive" });
+      return;
+    }
+    createCampaignMutation.mutate({
+      name: newCampaign.name,
+      description: newCampaign.description,
+      targetAudience: newCampaign.targetAudience,
+      budget: newCampaign.budget ? parseInt(newCampaign.budget) : 0,
+      status: "active"
+    });
+  };
 
   const getStatusVariant = (status: string) => {
     if (status === "active") return "default";
@@ -35,12 +89,45 @@ export default function Marketing() {
           <h1 className="text-3xl font-bold mb-2">Marketing Tools</h1>
           <p className="text-muted-foreground">Manage your campaigns and track performance</p>
         </div>
-        <Button asChild data-testid="button-create-campaign">
-          <Link href="/marketing/create">
-            <Plus className="w-4 h-4 mr-2" />
-            Create Campaign
-          </Link>
-        </Button>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-create-campaign">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Campaign
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Campaign</DialogTitle>
+              <DialogDescription>Setup a new marketing campaign to reach your target audience.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Campaign Name</Label>
+                <Input id="name" placeholder="e.g. Summer Promo" value={newCampaign.name} onChange={(e) => setNewCampaign({...newCampaign, name: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" placeholder="What is this campaign about?" value={newCampaign.description} onChange={(e) => setNewCampaign({...newCampaign, description: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="audience">Target Audience</Label>
+                  <Input id="audience" placeholder="e.g. Startups" value={newCampaign.targetAudience} onChange={(e) => setNewCampaign({...newCampaign, targetAudience: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="budget">Budget ($)</Label>
+                  <Input id="budget" type="number" placeholder="500" value={newCampaign.budget} onChange={(e) => setNewCampaign({...newCampaign, budget: e.target.value})} />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleCreateCampaign} disabled={createCampaignMutation.isPending}>
+                Create Campaign
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -143,12 +230,12 @@ export default function Marketing() {
                       View Details
                     </Button>
                     {campaign.status === "active" && (
-                      <Button variant="outline" size="sm" data-testid={`button-pause-${campaign.id}`}>
+                      <Button variant="outline" size="sm" data-testid={`button-pause-${campaign.id}`} onClick={() => updateCampaignMutation.mutate({ id: campaign.id, status: "paused" })} disabled={updateCampaignMutation.isPending}>
                         Pause
                       </Button>
                     )}
                     {campaign.status === "paused" && (
-                      <Button variant="outline" size="sm" data-testid={`button-resume-${campaign.id}`}>
+                      <Button variant="outline" size="sm" data-testid={`button-resume-${campaign.id}`} onClick={() => updateCampaignMutation.mutate({ id: campaign.id, status: "active" })} disabled={updateCampaignMutation.isPending}>
                         Resume
                       </Button>
                     )}
@@ -165,11 +252,9 @@ export default function Marketing() {
               <p className="text-muted-foreground mb-4">
                 Create your first marketing campaign to reach more clients
               </p>
-              <Button asChild data-testid="button-create-campaign-empty">
-                <Link href="/marketing/create">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Campaign
-                </Link>
+              <Button onClick={() => setIsCreateOpen(true)} data-testid="button-create-campaign-empty">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Campaign
               </Button>
             </CardContent>
           </Card>

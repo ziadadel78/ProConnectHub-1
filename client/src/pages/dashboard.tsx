@@ -16,9 +16,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Job, Proposal } from "@shared/schema";
+import { useLanguage } from "@/lib/language";
 
 export default function Dashboard() {
   const { user, isFreelancer, isClient, isAdmin } = useAuth();
+  const { t } = useLanguage();
 
   const { data: stats, isLoading: statsLoading } = useQuery<any>({
     queryKey: ["/api/dashboard/stats"],
@@ -131,11 +133,11 @@ export default function Dashboard() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name}!</h1>
+          <h1 className="text-3xl font-bold mb-2">{t("dashboard.welcome", { name: user?.name || "" })}</h1>
           <p className="text-muted-foreground">
-            {isFreelancer && "Here's your freelance activity overview"}
-            {isClient && "Manage your jobs and find talent"}
-            {isAdmin && "Platform analytics and management"}
+            {isFreelancer && t("dashboard.freelancerSubtitle")}
+            {isClient && t("dashboard.clientSubtitle")}
+            {isAdmin && t("dashboard.adminSubtitle")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -143,7 +145,7 @@ export default function Dashboard() {
             <Button asChild data-testid="button-browse-jobs">
               <Link href="/jobs">
                 <Briefcase className="w-4 h-4 mr-2" />
-                Browse Jobs
+                {t("dashboard.browseJobs")}
               </Link>
             </Button>
           )}
@@ -151,7 +153,7 @@ export default function Dashboard() {
             <Button asChild data-testid="button-post-job">
               <Link href="/jobs/create">
                 <Plus className="w-4 h-4 mr-2" />
-                Post a Job
+                {t("dashboard.postJob")}
               </Link>
             </Button>
           )}
@@ -176,8 +178,8 @@ export default function Dashboard() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Jobs</CardTitle>
-            <CardDescription>Latest opportunities on the platform</CardDescription>
+            <CardTitle>{t("dashboard.recentJobs")}</CardTitle>
+            <CardDescription>{t("dashboard.latestOpportunities")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {jobsLoading ? (
@@ -198,11 +200,11 @@ export default function Dashboard() {
                 </Link>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No jobs available</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t("dashboard.noJobsAvailable")}</p>
             )}
             {recentJobs && recentJobs.length > 0 && (
               <Button variant="outline" asChild className="w-full" data-testid="button-view-all-jobs">
-                <Link href="/jobs">View All Jobs</Link>
+                <Link href="/jobs">{t("dashboard.viewAllJobs")}</Link>
               </Button>
             )}
           </CardContent>
@@ -211,8 +213,8 @@ export default function Dashboard() {
         {isFreelancer && (
           <Card>
             <CardHeader>
-              <CardTitle>My Proposals</CardTitle>
-              <CardDescription>Track your submitted proposals</CardDescription>
+              <CardTitle>{t("dashboard.myProposals")}</CardTitle>
+              <CardDescription>{t("dashboard.trackProposals")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {proposalsLoading ? (
@@ -221,9 +223,9 @@ export default function Dashboard() {
                 recentProposals.slice(0, 5).map((proposal) => (
                   <div key={proposal.id} className="p-4 rounded-md border border-border" data-testid={`proposal-${proposal.id}`}>
                     <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium text-sm">Proposal</p>
+                      <p className="font-medium text-sm">{t("dashboard.proposal")}</p>
                       <Badge variant={proposal.status === "accepted" ? "default" : proposal.status === "rejected" ? "destructive" : "secondary"}>
-                        {proposal.status}
+                        {t(`common.status.${proposal.status}`)}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-2">{proposal.coverLetter}</p>
@@ -231,16 +233,16 @@ export default function Dashboard() {
                       <DollarSign className="w-3 h-3" />
                       ${proposal.proposedRate}
                       <Clock className="w-3 h-3 ml-2" />
-                      {proposal.deliveryTime} days
+                      {proposal.deliveryTime} {t("common.misc.days")}
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">No proposals yet</p>
+                <p className="text-sm text-muted-foreground text-center py-8">{t("dashboard.noProposalsYet")}</p>
               )}
               {recentProposals && recentProposals.length > 0 && (
                 <Button variant="outline" asChild className="w-full" data-testid="button-view-all-proposals">
-                  <Link href="/proposals">View All Proposals</Link>
+                  <Link href="/proposals">{t("dashboard.viewAllProposals")}</Link>
                 </Button>
               )}
             </CardContent>
@@ -250,8 +252,8 @@ export default function Dashboard() {
         {isClient && (
           <Card>
             <CardHeader>
-              <CardTitle>My Jobs</CardTitle>
-              <CardDescription>Manage your posted jobs</CardDescription>
+              <CardTitle>{t("dashboard.myJobs")}</CardTitle>
+              <CardDescription>{t("dashboard.managePostedJobs")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {jobsLoading ? (
@@ -262,22 +264,22 @@ export default function Dashboard() {
                     <div className="p-4 rounded-md border border-border hover-elevate active-elevate-2 cursor-pointer">
                       <div className="flex items-center justify-between mb-2">
                         <p className="font-medium">{job.title}</p>
-                        <Badge variant={job.status === "open" ? "default" : "secondary"}>{job.status}</Badge>
+                        <Badge variant={job.status === "open" ? "default" : "secondary"}>{t(`common.status.${job.status}`)}</Badge>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>${job.budget}</span>
-                        <span>{job.proposalCount} proposals</span>
+                        <span>{job.proposalCount} {t("common.misc.proposals")}</span>
                       </div>
                     </div>
                   </Link>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">No jobs posted yet</p>
+                <p className="text-sm text-muted-foreground text-center py-8">{t("dashboard.noJobsPosted")}</p>
               )}
               <Button asChild className="w-full" data-testid="button-post-job-card">
                 <Link href="/jobs/create">
                   <Plus className="w-4 h-4 mr-2" />
-                  Post New Job
+                  {t("dashboard.postNewJob")}
                 </Link>
               </Button>
             </CardContent>
